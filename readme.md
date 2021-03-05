@@ -1,3 +1,7 @@
+# Lien Google Docs Idées
+
+https://docs.google.com/document/d/1wT-7xm-q_p42Oq8Bdhn3XpjKWg4NxOhBJbf82I146lc/edit?usp=sharing
+
 # Architecture étudiée
 Pour les features extraction :
 

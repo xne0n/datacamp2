@@ -47,7 +47,7 @@ def over_sampling(df):
     return X_res,y_res
 
 
-def add_feature(df):
+def add_feature(df): # ceci fonctionne avec X et Y pas juste avec le DataFrame
     df["h_Nez_ment"]=df.iloc[:,68+8]-df.iloc[:,68+33]
     df["h_bouche_int"]=df.iloc[:,68+66]-df.iloc[:,68+62]
    
@@ -61,7 +61,6 @@ def add_feature(df):
     df["larg_sur_haut_bouche_ext"]= (-df.iloc[:,68+51]+df.iloc[:,68+57])/(-df.iloc[:,48]+df.iloc[:,54])
     #df["dist"]
  
-    # angle 24,23,25 et 19,18,20
 
     return df
 
@@ -94,16 +93,7 @@ def index_features_select(X,Y,c=1):
     print(len_feat)
     return np.where(rf.feature_importances_>=(c/len_feat)) 
 
-#print(transform_1.relat_oeilg_2.values)
-test = labels.copy()
-X_over,Y_over = over_sampling(test)
-X_new = add_feature(X_over)
-#print(np.where(X_new.iloc[:,-1].values==np.inf))
-# print(X_new.iloc[:,-2].values[[30,195,300,378]])
-# print(-X_new.iloc[:,0+60].values[[30,195,300,378]]+X_new.iloc[:,0+64].values[[30,195,300,378]])
-# print(-X_new.iloc[:,68+62].values[[30,195,300,378]]+X_new.iloc[:,68+66].values[[30,195,300,378]])
 
-print(index_features_select(X_new,Y_over,c=0.9))
 
 def cos_radius(df,a,b,c):
     # a est le sommet de l'angle
@@ -122,54 +112,18 @@ def cos_radius(df,a,b,c):
     # pour avoir la valeur en degrés faire np.degrees(np.arcos(prod_scal/(ab_norm*cd_norm)))
     # en radiant juste np.arcos(prod_scal/(ab_norm*cd_norm))
     return (prod_scal)/(ab_norm*cd_norm)
-#print(add_features(labels))
-#print(cos_radius(labels,60,61,67))
-#cos_radius(labels,60,51,57)
 
-'''print(np.degrees(np.arccos(cos_radius(labels,60,61,67)[[0,1,4,10]])))
-print("-----------")
-print(np.degrees(np.arccos(cos_radius(labels,60,62,66)[[0,1,4,10]])))
-print("-----------")'''
-#print(np.degrees(np.arccos(cos_radius(labels,48,51,57)[[0,1,4,10]])))
-#print("Neutre","Neutre-degout","Etonne","Joie")
+test = labels.copy()
+X_over,Y_over = over_sampling(test)
+X_new = add_feature(X_over)
 
-#print(cos_radius(labels,60,61,67).values)
+print(index_features_select(X_new,Y_over,c=0.9))
 
 
 
 
 
 
-
-
-#print(np.unique(labels.iloc[:,-1].values,return_counts=True))
-#print((data.landmarks[0,0,:]))
-'''print(labels.iloc[0,[1+33,69+33]],"\n",labels.iloc[0,[1+8,69+8]])
-print(labels.iloc[0,[1+51,69+51]],"\n",labels.iloc[0,[1+57,69+57]])
-print("--------------")
-print(labels.iloc[1,[1+33,69+33]],"\n",labels.iloc[1,[1+8,69+8]])
-print(labels.iloc[1,[1+51,69+51]],"\n",labels.iloc[1,[1+57,69+57]])
-print("--------------")
-print(labels.iloc[4,[1+33,69+33]],"\n",labels.iloc[4,[1+8,69+8]])
-print(labels.iloc[4,[1+51,69+51]],"\n",labels.iloc[4,[1+57,69+57]])
-print("--------------")
-print(labels.iloc[10,[1+33,69+33]],"\n",labels.iloc[10,[1+8,69+8]])
-print(labels.iloc[10,[1+51,69+51]],"\n",labels.iloc[10,[1+57,69+57]])'''
-
-'''
-print(labels.iloc[0,[1+42,69+42]],"\n",labels.iloc[0,[1+45,69+45]])
-print(labels.iloc[0,[1+43,69+43]],"\n",labels.iloc[0,[1+47,69+47]])
-print(labels.iloc[0,[1+44,69+44]],"\n",labels.iloc[0,[1+46,69+46]])'''
-
-'''print((-labels.iloc[0,1+42]+labels.iloc[0,1+45])/(-labels.iloc[0,69+43]+labels.iloc[0,69+47]))
-print((-labels.iloc[1,1+42]+labels.iloc[1,1+45])/(-labels.iloc[1,69+43]+labels.iloc[1,69+47]))
-print((-labels.iloc[2,1+42]+labels.iloc[2,1+45])/(-labels.iloc[2,69+43]+labels.iloc[2,69+47]))
-print((-labels.iloc[-2,1+42]+labels.iloc[-2,1+45])/(-labels.iloc[-2,69+43]+labels.iloc[-2,69+47]))
-print((-labels.iloc[-3,1+42]+labels.iloc[-3,1+45])/(-labels.iloc[-3,69+43]+labels.iloc[-3,69+47]))
-print((-labels.iloc[10,1+42]+labels.iloc[10,1+45])/(-labels.iloc[10,69+43]+labels.iloc[10,69+47]))
-print((-labels.iloc[4,1+42]+labels.iloc[4,1+45])/(-labels.iloc[4,69+43]+labels.iloc[4,69+47]))'''
-
-## Faire l'angle
 
 
 

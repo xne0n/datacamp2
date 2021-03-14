@@ -1,7 +1,10 @@
 import pandas as pd
 import numpy as np
-import imblearn
-
+#import imblearn
+from collections import Counter
+from sklearn.datasets import make_classification
+from imblearn.over_sampling import SMOTE 
+from sklearn.ensemble import RandomForestClassifier
 
 class importcsv:
     def __init__(self,path,train): 
@@ -17,9 +20,51 @@ class importcsv:
             self.target = df.iloc[:,-1:]
 
 data = importcsv("./Dataset/trainset/trainset.csv",1)
-import pandas as pd
-import numpy as np
+
 labels = pd.read_csv("Dataset\\trainset\\trainset.csv")
+
+'''rf = RandomForestClassifier(n_estimators=120,criterion='gini',max_depth=30)
+rf.fit(labels.iloc[:,1:-1], labels.iloc[:,-1])
+#print(labels.columns[1:])
+print(labels.iloc[:,1:-1].values.shape[1])
+print(np.where(rf.feature_importances_>=(1.5/136))) # ici 136 = nb de features, il faut rajouter 1 à ces index'''
+
+'''feature_importances = pd.DataFrame(rf.feature_importances_, index =labels.columns[1:-1],  
+columns=['importance']).sort_values('importance', ascending=False)
+print(feature_importances)'''
+
+'''sm = SMOTE(random_state=42)
+X_res, y_res = sm.fit_resample(labels.iloc[:,1:-1], labels.iloc[:,-1])
+print('Resampled dataset shape %s' % Counter(y_res))'''
+
+
+
+
+def over_sampling(df):
+    sm = SMOTE(random_state=42,k_neighbors=6)
+    X_res, y_res = sm.fit_resample(df.iloc[:,1:-1], df.iloc[:,-1])
+    print('Resampled dataset shape %s' % Counter(y_res))
+    return X_res,y_res
+
+
+def add_feature(df):
+    df["h_Nez_ment"]=df.iloc[:,68+8]-df.iloc[:,68+33]
+    df["h_bouche_int"]=df.iloc[:,68+66]-df.iloc[:,68+62]
+   
+    df["larg_bouche_int"]=df.iloc[:,60]-df.iloc[:,64]
+    df["relat_oeild_1"]=(-df.iloc[:,42]+df.iloc[:,45])/(-df.iloc[:,68+43]+df.iloc[:,68+47])#ici c'est largeur/hauteur
+    df["relat_oeild_2"]=(-df.iloc[:,42]+df.iloc[:,45])/(-df.iloc[:,68+44]+df.iloc[:,68+46])
+    df["relat_oeilg_1"]=(-df.iloc[:,36]+df.iloc[:,39])/(-df.iloc[:,68+37]+df.iloc[:,68+41])
+    df["relat_oeilg_2"]=(-df.iloc[:,36]+df.iloc[:,39])/(-df.iloc[:,68+38]+df.iloc[:,68+40])
+
+    df["larg_sur_haut_bouche_int"]= (-df.iloc[:,68+62]+df.iloc[:,68+66])/(-df.iloc[:,60]+df.iloc[:,64])
+    df["larg_sur_haut_bouche_ext"]= (-df.iloc[:,68+51]+df.iloc[:,68+57])/(-df.iloc[:,48]+df.iloc[:,54])
+    #df["dist"]
+ 
+    # angle 24,23,25 et 19,18,20
+
+    return df
+
 def add_features(df):
     labels = df["label"]
     df.drop(['label'], axis=1)
@@ -29,17 +74,37 @@ def add_features(df):
     df["larg_bouche_int"]=df.iloc[:,1+60]-df.iloc[:,1+64]
     df["relat_oeild_1"]=(-df.iloc[:,1+42]+df.iloc[:,1+45])/(-df.iloc[:,69+43]+df.iloc[:,69+47])#ici c'est largeur/hauteur
     df["relat_oeild_2"]=(-df.iloc[:,1+42]+df.iloc[:,1+45])/(-df.iloc[:,69+44]+df.iloc[:,69+46])
-    df["relat_oeilg_1"]=(-df.iloc[:,1+36]+df.iloc[:,1+39])/(-df.iloc[:,69+37]+df.iloc[:,69+38])
-    df["relat_oeilg_2"]=(-df.iloc[:,1+36]+df.iloc[:,1+39])/(-df.iloc[:,69+41]+df.iloc[:,69+40])
+    df["relat_oeilg_1"]=(-df.iloc[:,1+36]+df.iloc[:,1+39])/(-df.iloc[:,69+37]+df.iloc[:,69+41])
+    df["relat_oeilg_2"]=(-df.iloc[:,1+36]+df.iloc[:,1+39])/(-df.iloc[:,69+38]+df.iloc[:,69+40])
 
-    df["larg_sur_haut_bouche_int"]= (-df.iloc[:,1+60]+df.iloc[:,1+64])/(-df.iloc[:,69+62]+df.iloc[:,69+66])
-    df["larg_sur_haut_bouche_ext"]= (-df.iloc[:,1+48]+df.iloc[:,1+54])/(-df.iloc[:,69+51]+df.iloc[:,69+57])
-    df["dist"]
+    df["haut_sur_larg_bouche_int"]= (-df.iloc[:,69+62]+df.iloc[:,69+66]) / (-df.iloc[:,1+60]+df.iloc[:,1+64])
+    df["haut_sur_larg_bouche_ext"]= (-df.iloc[:,69+51]+df.iloc[:,69+57])/(-df.iloc[:,1+48]+df.iloc[:,1+54])
+    #df["dist"]
  
     # angle 24,23,25 et 19,18,20
 
     df["labels"]=labels
     return df
+def index_features_select(X,Y,c=1):
+    rf = RandomForestClassifier(n_estimators=120,criterion='gini',max_depth=30)
+    rf.fit(X, Y)
+    len_feat = X.values.shape[1]
+
+    #print(labels.columns[1:])
+    print(len_feat)
+    return np.where(rf.feature_importances_>=(c/len_feat)) 
+
+#print(transform_1.relat_oeilg_2.values)
+test = labels.copy()
+X_over,Y_over = over_sampling(test)
+X_new = add_feature(X_over)
+#print(np.where(X_new.iloc[:,-1].values==np.inf))
+# print(X_new.iloc[:,-2].values[[30,195,300,378]])
+# print(-X_new.iloc[:,0+60].values[[30,195,300,378]]+X_new.iloc[:,0+64].values[[30,195,300,378]])
+# print(-X_new.iloc[:,68+62].values[[30,195,300,378]]+X_new.iloc[:,68+66].values[[30,195,300,378]])
+
+print(index_features_select(X_new,Y_over,c=0.9))
+
 def cos_radius(df,a,b,c):
     # a est le sommet de l'angle
     ab_vec_x = ( df.iloc[:,1+b].values-df.iloc[:,1+a].values )#/(df.iloc[:,1+42].values-df.iloc[:,1+39].values)
@@ -104,7 +169,6 @@ print((-labels.iloc[-3,1+42]+labels.iloc[-3,1+45])/(-labels.iloc[-3,69+43]+label
 print((-labels.iloc[10,1+42]+labels.iloc[10,1+45])/(-labels.iloc[10,69+43]+labels.iloc[10,69+47]))
 print((-labels.iloc[4,1+42]+labels.iloc[4,1+45])/(-labels.iloc[4,69+43]+labels.iloc[4,69+47]))'''
 
-print(labels.iloc[:,-1])
 ## Faire l'angle
 
 

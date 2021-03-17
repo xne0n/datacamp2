@@ -8,6 +8,7 @@ from sklearn.datasets import make_classification
 from imblearn.over_sampling import SMOTE 
 from sklearn.ensemble import RandomForestClassifier
 
+
 class importcsv:
     def __init__(self,path,train): 
         df=pd.read_csv(path, sep=',',header=0)

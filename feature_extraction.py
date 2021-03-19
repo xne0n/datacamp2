@@ -7,7 +7,8 @@ from collections import Counter
 from sklearn.datasets import make_classification
 from imblearn.over_sampling import SMOTE 
 from sklearn.ensemble import RandomForestClassifier
-
+from sklearn.model_selection import train_test_split
+from skimage import feature
 
 class importcsv:
     def __init__(self,path,train): 
@@ -51,7 +52,7 @@ def distance(data,A,B,specific=-1):
     if specific>=0 :
         a=np.array((data.landmarks[specific,A,0],data.landmarks[specific,A,1]))
         b=np.array((data.landmarks[specific,B,0],data.landmarks[specific,B,1]))
-        return np.linalg.norm(a-b)
+        return np.linalg.norm(a-b) # calcul distance euclidienne
     else:
         dist=[]
         for i in range(originalData.size):
@@ -62,8 +63,8 @@ def distance(data,A,B,specific=-1):
 
 def extractTextureFeatures():
 
-    maxHeight=math.ceil((np.max(distance(normalizedData,33,8))/10))*10
-    maxWidth=math.ceil((np.max(distance(normalizedData,33,16))/10))*10
+    maxHeight= math.ceil((np.max(distance(normalizedData,33,8))/10))*10 
+    maxWidth= math.ceil((np.max(distance(normalizedData,33,16))/10))*10
 
     '''
     ICI IL FAUDRA BOUCLER SUR TOUT LES IMAGES 
@@ -71,7 +72,7 @@ def extractTextureFeatures():
     '''
 
     # for file in range(originalData.size):
-    file=109
+    file=450
     headTilt=getHeadTilt(normalizedData,file)
     factor=normalizedData.normFactor[file]
 
@@ -81,7 +82,7 @@ def extractTextureFeatures():
             
     origin=tuple(np.array(img.shape[1::-1]) / 2)
     img = rotateImage(img,headTilt,origin)
-    img = img[round(normalizedData.landmarks[file,33,1])-maxHeight:round(normalizedData.landmarks[file,33,1])+maxHeight, round(normalizedData.landmarks[file,33,0])-maxWidth:round(normalizedData.landmarks[file,33,0])+maxWidth]
+    img = img[int(round(normalizedData.landmarks[file,33,1]))-maxHeight:int(round(normalizedData.landmarks[file,33,1]))+maxHeight, int(round(normalizedData.landmarks[file,33,0]))-maxWidth:int(round(normalizedData.landmarks[file,33,0]))+maxWidth]
     
     noseX,noseY=normalizedData.landmarks[file,33,0],normalizedData.landmarks[file,33,1]
     
@@ -89,13 +90,60 @@ def extractTextureFeatures():
             rotatedX,rotatedY = rotateLandmarks(origin,(normalizedData.landmarks[file,i,0],normalizedData.landmarks[file,i,1]),-(math.radians(headTilt)))
             normalizedData.landmarks[file,i,0]=rotatedX-noseX+maxWidth
             normalizedData.landmarks[file,i,1]=rotatedY-noseY+maxHeight
-            plt.scatter(round(normalizedData.landmarks[file,i,0]),round(normalizedData.landmarks[file,i,1]),c="red",s=1)
+    #plt.scatter(np.round(normalizedData.landmarks[file,:,0]),np.round(normalizedData.landmarks[file,:,1]),c="red",s=1)
+    #plt.imshow(img)
+    '''
+    Pour les images pour la représentation il faut faire un imshow(Y,X) et non (X,Y)
+    '''
+    #plt.imshow(img[int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0]),int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])])
+    #mouth=img[int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])+1,int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0])+1]
+    mouth=img[int(normalizedData.landmarks[file,29,1]):int(normalizedData.landmarks[file,35,1])+25,int(normalizedData.landmarks[file,31,0])-10:int(normalizedData.landmarks[file,35,0])+10]
+    
+    
+    #mouth=img[int(normalizedData.landmarks[file,24,1])-25:int(normalizedData.landmarks[file,24,1])+35,int(normalizedData.landmarks[file,17,0]):int(normalizedData.landmarks[file,26,0])+1]
+    
+    g_kernel = cv2.getGaborKernel((5, 5), 8.0, np.pi/4, 10.0, 0.5, 0, ktype=cv2.CV_32F)
+    mouth1 = cv2.filter2D(mouth, cv2.CV_8UC3, g_kernel)
+    plt.figure()
+    plt.imshow(mouth1)
+    plt.savefig("test_2.png")
+
+    print(LBP(mouth))
+    plt.figure()
+    plt.imshow(mouth)
+    plt.savefig("test_.png")
+    ret_s, th_s = cv2.threshold(mouth,127,255,cv2.THRESH_BINARY)
+
+    th_s=feature.local_binary_pattern(th_s, 24,
+            8, method="uniform")
+    th_s[th_s==24]=0
+    print(np.unique(th_s))
+    plt.imshow(th_s)
+    plt.savefig('test1.png')
+    plt.figure()
+    plt.scatter(np.round(normalizedData.landmarks[file,:,0]),np.round(normalizedData.landmarks[file,:,1]),c="red",s=1)
     plt.imshow(img)
-    plt.savefig('test.png')
+    plt.savefig('test2.png')
+
+
 
     '''
     ICI AJOUTER LA METHODE D'EXTRACTION DE FEATURES DE TEXTURE QU'ON VEUT
     AVANT LA FIN DU FOR
+    '''
+'''
+On fait l'Upsampling après le split, et dans le split nos données de test doivent avoir la même distribution
+'''
+def LBP(img_sector):
+    ret_s, th_s = cv2.threshold(img_sector,127,255,cv2.THRESH_BINARY)
+    th_s=feature.local_binary_pattern(th_s, 24,
+            8, method="uniform")
+    th_s[th_s==24]=0
+    rate_nblack_pix = (th_s[th_s!=0].size) / th_s.size
+    rate_nblack_on_bl = (th_s[th_s!=0].size)/(th_s[th_s==0].size)
+    return rate_nblack_pix,rate_nblack_on_bl
+    '''
+    La fonction renvoie un tuple
     '''
 
 

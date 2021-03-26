@@ -38,8 +38,8 @@ class normalization:
 
 
 def rotateImage(img, angle, origin):
-  rotationMatrix = cv2.getRotationMatrix2D(origin, angle, 1.0)
-  return cv2.warpAffine(img, rotationMatrix, img.shape[1::-1], flags=cv2.INTER_LINEAR)
+    rotationMatrix = cv2.getRotationMatrix2D(origin, angle, 1.0)
+    return cv2.warpAffine(img, rotationMatrix, img.shape[1::-1], flags=cv2.INTER_LINEAR)
 
 def rotateLandmarks(origin, point, angle):
     ox, oy = origin
@@ -62,122 +62,121 @@ def distance(data,A,B,specific=-1):
             dist.append(np.linalg.norm(a-b))
         return np.array(dist)
 
-def extractTextureFeatures(file):
-
-    maxHeight= math.ceil((np.max(distance(normalizedData,33,8))/10))*10 
-    maxWidth= math.ceil((np.max(distance(normalizedData,33,16))/10))*10
-
-    '''
-    ICI IL FAUDRA BOUCLER SUR TOUT LES IMAGES 
-    ET APPLIQUER LA METHODE D'EXTRACTION DE FEATURES DE TEXTURE QU'ON VEUT
-    '''
-
-    # for file in range(originalData.size):
-
-    #file=450
-
-    headTilt=getHeadTilt(normalizedData,file)
-    factor=normalizedData.normFactor[file]
-
-    img = cv2.imread("./Dataset/trainset/"+originalData.filename[file]+".png", cv2.IMREAD_UNCHANGED)
-    # img = plt.imread("./Dataset/trainset/"+originalData.filename[file]+".png")
-
-    #print(len(os.listdir("./Dataset/trainset/")))
-
-    img = cv2.resize(img, (int(img.shape[1] * factor), int(img.shape[0] * factor)), interpolation = cv2.INTER_AREA)
-            
-    origin=tuple(np.array(img.shape[1::-1]) / 2)
-    img = rotateImage(img,headTilt,origin)
-    img = img[int(round(normalizedData.landmarks[file,33,1]))-maxHeight:int(round(normalizedData.landmarks[file,33,1]))+maxHeight, int(round(normalizedData.landmarks[file,33,0]))-maxWidth:int(round(normalizedData.landmarks[file,33,0]))+maxWidth]
+def extractTextureFeatures():
     
-    noseX,noseY=normalizedData.landmarks[file,33,0],normalizedData.landmarks[file,33,1]
+    columns = ['texInterSourcil1', 'texInterSourcil2','texCoinBoucheD1', 'texCoinBoucheD2', 'texCoinBoucheG1', 'texCoinBoucheG2', 'texPaupiereG1', 'texPaupiereG2', 'texPaupiereD1', 'texPaupiereD2']
     
-    for i in range(len(normalizedData.landmarks[file,:,:])):
+    df = pd.DataFrame(index=range(originalData.size),columns=columns)
+
+    maxHeight= round ( np.max(distance(normalizedData,33,8)) +3 )
+    maxWidth= round ( np.max(distance(normalizedData,33,16)) +3 )
+    
+    for file in range(originalData.size):
+        print(file,end='')
+        headTilt=getHeadTilt(normalizedData,file)
+        factor=normalizedData.normFactor[file]
+
+        img = cv2.imread("./Dataset/trainset/"+originalData.filename[file]+".png", cv2.IMREAD_UNCHANGED)
+        # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
+        img = cv2.resize(img, (int(img.shape[1] * factor), int(img.shape[0] * factor)), interpolation = cv2.INTER_AREA)
+                
+        origin=tuple(np.array(img.shape[1::-1]) / 2)
+        img = rotateImage(img,headTilt,origin)
+        img = img[int(round(normalizedData.landmarks[file,33,1]))-maxHeight:int(round(normalizedData.landmarks[file,33,1]))+maxHeight, int(round(normalizedData.landmarks[file,33,0]))-maxWidth:int(round(normalizedData.landmarks[file,33,0]))+maxWidth]
+        
+        noseX,noseY=normalizedData.landmarks[file,33,0],normalizedData.landmarks[file,33,1]
+        
+        for i in range(len(normalizedData.landmarks[file,:,:])):
+
             rotatedX,rotatedY = rotateLandmarks(origin,(normalizedData.landmarks[file,i,0],normalizedData.landmarks[file,i,1]),-(math.radians(headTilt)))
             normalizedData.landmarks[file,i,0]=rotatedX-noseX+maxWidth
             normalizedData.landmarks[file,i,1]=rotatedY-noseY+maxHeight
-    #plt.scatter(np.round(normalizedData.landmarks[file,:,0]),np.round(normalizedData.landmarks[file,:,1]),c="red",s=1)
-    #plt.imshow(img)
-    '''
-    Pour les images pour la représentation il faut faire un imshow(Y,X) et non (X,Y)
-    '''
-    #plt.imshow(img[int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0]),int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])])
-    #mouth=img[int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])+1,int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0])+1]
-    
-    mouth=img[int(normalizedData.landmarks[file,29,1]):int(normalizedData.landmarks[file,35,1])+25,int(normalizedData.landmarks[file,31,0])-10:int(normalizedData.landmarks[file,35,0])+10]
-    
-    #mouth=img[int(normalizedData.landmarks[file,24,1])-25:int(normalizedData.landmarks[file,24,1])+35,int(normalizedData.landmarks[file,17,0]):int(normalizedData.landmarks[file,26,0])+1]
-    
-    # g_kernel = cv2.getGaborKernel((5, 5), 8.0, np.pi/4, 10.0, 0.5, 0, ktype=cv2.CV_32F)
-    # mouth1 = cv2.filter2D(mouth, cv2.CV_8UC3, g_kernel)
-    # plt.figure()
-    # plt.imshow(mouth1)
-    # plt.savefig("test_2.png")
+            # plt.scatter(np.round(normalizedData.landmarks[file,i,0]),np.round(normalizedData.landmarks[file,i,1]),c="red",s=1)
+        
+        '''
+        ZONE ENTRE LES SOURCILS
+        '''
+        height=int((normalizedData.landmarks[file,27,1]-normalizedData.landmarks[file,21,1])/2)
+        width=int((normalizedData.landmarks[file,22,0]-normalizedData.landmarks[file,21,0])/2)
+        centerY=int(normalizedData.landmarks[file,27,1]-height)
+        centerX=int(normalizedData.landmarks[file,27,0])
+        
+        df.iloc[file,0], df.iloc[file,1] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
 
-    #print(LBP(mouth))
+        '''
+        ZONE COIN DROIT DE LA BOUCHE
+        '''
+        height=int((normalizedData.landmarks[file,59,1]-normalizedData.landmarks[file,49,1]))
+        width=int((normalizedData.landmarks[file,49,0]-normalizedData.landmarks[file,48,0]))
+        centerY=int(normalizedData.landmarks[file,48,1])
+        centerX=int(normalizedData.landmarks[file,48,0])
+        
+        df.iloc[file,2], df.iloc[file,3] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
 
+        '''
+        ZONE COIN GAUCHE DE LA BOUCHE
+        '''
 
-    # plt.figure()
-    # plt.imshow(mouth)
-    # plt.savefig("test_.png")
-    # ret_s, th_s = cv2.threshold(mouth,127,255,cv2.THRESH_BINARY)
+        height=int((normalizedData.landmarks[file,55,1]-normalizedData.landmarks[file,52,1]))
+        width=int((normalizedData.landmarks[file,54,0]-normalizedData.landmarks[file,53,0]))
+        centerY=int(normalizedData.landmarks[file,54,1])
+        centerX=int(normalizedData.landmarks[file,54,0])
+        
+        df.iloc[file,4], df.iloc[file,5] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
 
-    # th_s=feature.local_binary_pattern(th_s, 24,
-    #         8, method="uniform")
-    # th_s[th_s==24]=0
-    #print(np.unique(th_s))
+        '''
+        ZONE PAUPIERE GAUCHE
+        '''
 
+        height=int((normalizedData.landmarks[file,1,1]-normalizedData.landmarks[file,36,1])/2)
+        width=int((normalizedData.landmarks[file,39,0]-normalizedData.landmarks[file,36,0])/2)
+        centerY=int(normalizedData.landmarks[file,41,1]+height)
+        centerX=int(normalizedData.landmarks[file,36,0]+width)
 
-    # plt.imshow(th_s)
-    # plt.savefig('test1.png')
-    # plt.figure()
-    # plt.scatter(np.round(normalizedData.landmarks[file,:,0]),np.round(normalizedData.landmarks[file,:,1]),c="red",s=1)
+        df.iloc[file,6], df.iloc[file,7] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+
+        '''
+        ZONE PAUPIERE DROITE
+        '''
+
+        height=int((normalizedData.landmarks[file,1,1]-normalizedData.landmarks[file,42,1])/2)
+        width=int((normalizedData.landmarks[file,45,0]-normalizedData.landmarks[file,42,0])/2)
+        centerY=int(normalizedData.landmarks[file,47,1]+height)
+        centerX=int(normalizedData.landmarks[file,42,0]+width)
+
+        df.iloc[file,8], df.iloc[file,9] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+        
+    return df
+    # plt.imshow(cv2.cvtColor(img[centerY-height:centerY+height,centerX-width:centerX+width], cv2.COLOR_BGR2RGB))
+    # plt.imshow(img[centerY-height:centerY+height,centerX-width:centerX+width])
     # plt.imshow(img)
-    # plt.savefig('test2.png')
+    # plt.scatter(centerX,centerY,c="blue",s=1)
+    
+    # plt.savefig('test'+str(file)+'.png')
 
-
-
-    '''
-    ICI AJOUTER LA METHODE D'EXTRACTION DE FEATURES DE TEXTURE QU'ON VEUT
-    AVANT LA FIN DU FOR
-    '''
 '''
 On fait l'Upsampling après le split, et dans le split nos données de test doivent avoir la même distribution
 '''
-def LBP(path,img_sector):
-    
-    nb_images= len(os.listdir(path)) - 1
-    output = np.empty(shape = (nb_images,2),dtype=np.float)
+def LBP(img):
 
-    i=0
-    for image in os.listdir(path):
-        if image[-1]=="v":
-            continue
-        else:
-            path_im=os.path.join(path,image)
-            img = cv2.imread(path_im,0)
-            img = img[img_sector[0]-5:img_sector[1]+5, img_sector[2]-5:img_sector[3]+5]
-            ret_s, th_s = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
-            th_s=feature.local_binary_pattern(th_s, 24,
-                    8, method="uniform")
-            th_s[th_s==24]=0
-            rate_nblack_pix = (th_s[th_s!=0].size) / th_s.size
-            rate_nblack_on_bl = (th_s[th_s!=0].size)/(th_s[th_s==0].size)
-            output[i,:]= np.array([rate_nblack_pix,rate_nblack_on_bl])
-            i+=1
+    ret_s, th_s = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
+    th_s=feature.local_binary_pattern(th_s, 24,8, method="uniform")
+    th_s[th_s==24]=0
+    rate_nblack_pix = (th_s[th_s!=0].size) / th_s.size
+    rate_nblack_on_bl = (th_s[th_s!=0].size)/(th_s[th_s==0].size)
 
-    return output #rate_nblack_pix,rate_nblack_on_bl
-    '''
-    La fonction renvoie un numpy array
-    '''
+    return rate_nblack_pix, rate_nblack_on_bl
 
+def landmarksDataFrame():
 
+    dfx = pd.DataFrame(normalizedData.landmarks[:,:,0], columns = ['x_0', 'x_1', 'x_2', 'x_3', 'x_4', 'x_5', 'x_6', 'x_7', 'x_8', 'x_9', 'x_10', 'x_11', 'x_12', 'x_13', 'x_14', 'x_15', 'x_16', 'x_17', 'x_18', 'x_19', 'x_20', 'x_21', 'x_22', 'x_23', 'x_24', 'x_25', 'x_26', 'x_27', 'x_28', 'x_29', 'x_30', 'x_31', 'x_32', 'x_33', 'x_34', 'x_35', 'x_36', 'x_37', 'x_38', 'x_39', 'x_40', 'x_41', 'x_42', 'x_43', 'x_44', 'x_45', 'x_46', 'x_47', 'x_48', 'x_49', 'x_50', 'x_51', 'x_52', 'x_53', 'x_54', 'x_55', 'x_56', 'x_57', 'x_58', 'x_59', 'x_60', 'x_61', 'x_62', 'x_63', 'x_64', 'x_65', 'x_66', 'x_67'])
+    dfy = pd.DataFrame(normalizedData.landmarks[:,:,1], columns = ['y_0', 'y_1', 'y_2', 'y_3', 'y_4', 'y_5', 'y_6', 'y_7', 'y_8', 'y_9', 'y_10', 'y_11', 'y_12', 'y_13', 'y_14', 'y_15', 'y_16', 'y_17', 'y_18', 'y_19', 'y_20', 'y_21', 'y_22', 'y_23', 'y_24', 'y_25', 'y_26', 'y_27', 'y_28', 'y_29', 'y_30', 'y_31', 'y_32', 'y_33', 'y_34', 'y_35', 'y_36', 'y_37', 'y_38', 'y_39', 'y_40', 'y_41', 'y_42', 'y_43', 'y_44', 'y_45', 'y_46', 'y_47', 'y_48', 'y_49', 'y_50', 'y_51', 'y_52', 'y_53', 'y_54', 'y_55', 'y_56', 'y_57', 'y_58', 'y_59', 'y_60', 'y_61', 'y_62', 'y_63', 'y_64', 'y_65', 'y_66', 'y_67'])
+    return pd.concat([dfx, dfy], axis=1)
 
+def extractGeoFeatures():
 
-def extract_features(path):
     columns = ['h_nez_ment','h_bouche_int', 'oeil_d_sourcil', 'oeil_g_sourcil', 'inter_sourcil', 'relat_oeil_d_1',
            'relat_oeil_d_2', 'relat_oeil_g_1', 'relat_oeil_g_2', 'relat_bouche_int',
-            'LBP_mouth_1','LBP_mouth_2',
 
            'labels']
     df = pd.DataFrame(index=range(originalData.size),columns=columns)
@@ -190,76 +189,39 @@ def extract_features(path):
     df["relat_oeil_d_2"]=(distance(normalizedData,42,45)/distance(normalizedData,44,46))
     df["relat_oeil_g_1"]=(distance(normalizedData,36,39)/distance(normalizedData,37,41))
     df["relat_oeil_g_2"]=(distance(normalizedData,36,39)/distance(normalizedData,38,40))
-    #df["relat_bouche_int"]= (distance(normalizedData,60,64)/distance(normalizedData,62,66))
     df["relat_bouche_int"]= (distance(normalizedData,62,66)/distance(normalizedData,60,64))
-    a,b= int(np.max(normalizedData.landmarks[:,51,1],axis=0)),int(np.max(normalizedData.landmarks[:,57,1],axis=0))
-    c,d= int(np.max(normalizedData.landmarks[:,48,0],axis=0)),int(np.max(normalizedData.landmarks[:,54,0],axis=0))
-    
-    img_sec = (a,b,c,d)
-    mouth = LBP(path,img_sec)
-    df["LBP_mouth_1"] = mouth[:,0]
-    df["LBP_mouth_2"] = mouth[:,1]
-    
+
     df["labels"]=originalData.target
     return df
 
+def index_features_select(X,Y,c=1):
+    rf = RandomForestClassifier(n_estimators=120,criterion='gini',max_depth=50)
+    rf.fit(X, Y)
+    len_feat = X.values.shape[1]
+    return np.where(rf.feature_importances_>=(c/len_feat))[0] 
 
 
 originalData = importcsv("./Dataset/trainset/trainset.csv",1)
 normalizedData = normalization(originalData)
 
-for file in range(len(os.listdir("./Dataset/trainset/"))-1): # on ne prend pas le fichier csv
-    extractTextureFeatures(file) # ceci nous donne de nouveaux landmarks
+texFeatures=extractTextureFeatures()
+landFeatures=landmarksDataFrame()
+geoFeatures=extractGeoFeatures()
 
-new_features = extract_features("./Dataset/trainset/")
-train_set = pd.read_csv("./Dataset/trainset/trainset.csv", sep=',',header=0)
-train_set = train_set.drop(columns=['filename', 'label'],axis = 1,errors='ignore') # pour rendre automatique même avec le test.csv
-print(normalizedData.landmarks[450,:,:].shape)
-for i in range(len(os.listdir("./Dataset/trainset/"))-1):
-    train_set.iloc[i,:68] = normalizedData.landmarks[i,:,0]
-    train_set.iloc[i,68:] = normalizedData.landmarks[i,:,1]
+fullFeatures = pd.concat([landFeatures,texFeatures,geoFeatures], axis=1)
 
-trainset = pd.concat([train_set,new_features],axis=1)
-trainset.to_csv("features_train.csv",index=False)
-
-# testData = importcsv("./Dataset/testset/testset.csv",0)
-# testDataNorm= normalization(testData)
-
-# for file in range(len(os.listdir("./Dataset/testset/"))-1): # on ne prend pas le fichier csv
-#     extractTextureFeatures(file) # ceci nous donne de nouveaux landmarks
+# finalFeatures = fullFeatures.iloc[:,index_features_select(fullFeatures.iloc[:,:-1],fullFeatures.iloc[:,-1])]
+fullFeatures.to_csv("features_train.csv",index=False)
 
 # new_features = extract_features("./Dataset/trainset/")
+
+
 # train_set = pd.read_csv("./Dataset/trainset/trainset.csv", sep=',',header=0)
 # train_set = train_set.drop(columns=['filename', 'label'],axis = 1,errors='ignore') # pour rendre automatique même avec le test.csv
-# print(normalizedData.landmarks[450,:,:].shape)
+
 # for i in range(len(os.listdir("./Dataset/trainset/"))-1):
 #     train_set.iloc[i,:68] = normalizedData.landmarks[i,:,0]
 #     train_set.iloc[i,68:] = normalizedData.landmarks[i,:,1]
 
 # trainset = pd.concat([train_set,new_features],axis=1)
 # trainset.to_csv("features_train.csv",index=False)
-
-
-
-
-#file=450
-#img_sec= (int(normalizedData.landmarks[file,29,1]),int(normalizedData.landmarks[file,35,1]),int(normalizedData.landmarks[file,31,0]),int(normalizedData.landmarks[file,35,0]))
-
-# a= int(np.max(normalizedData.landmarks[:,51,1],axis=0))
-# b= int(np.max(normalizedData.landmarks[:,57,1],axis=0))
-# c= int(np.max(normalizedData.landmarks[:,48,0],axis=0))
-# d= int(np.max(normalizedData.landmarks[:,54,0],axis=0))
-
-# img_sec = (a,b,c,d)
-
-# print(LBP("./Dataset/trainset/",img_sec))
-
-
-
-
-
-# test = labels.copy()
-# X_over,Y_over = over_sampling(test)
-# X_new = add_feature(X_over)
-# print(X_new)
-# print(index_features_select(X_new,Y_over,c=0.9))

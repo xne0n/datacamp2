@@ -227,7 +227,7 @@ On utilise une Random Forest pour effuctuer une features selection
 '''
 
 def index_features_select(X,Y,c=1):
-    rf = RandomForestClassifier(n_estimators=130,criterion='gini',max_depth=50,random_state=39)
+    rf = RandomForestClassifier(n_estimators=130,criterion='gini',max_depth=50,random_state=42)
     rf.fit(X, Y)
     len_feat = X.values.shape[1]
     return np.where(rf.feature_importances_>=(c/len_feat))[0] 
@@ -253,7 +253,7 @@ finalFeatures = pd.concat([finalFeatures,labels],axis=1)
 
 finalFeatures.to_csv("features_train.csv",index=False)
 '''
-Maintenant on crée notre features_test.csv en ne prenant que les features qui on été selectionné lors de la features selection du train
+Maintenant on créer notre features_test.csv en ne prenant que les features qui on été selectionné lors de la features selection du train
 '''
 originalData = importcsv(0)
 

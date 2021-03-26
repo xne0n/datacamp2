@@ -50,10 +50,10 @@ ensemble_model_2 = VotingClassifier(estimators=[
           ('knn', NN1), 
          ('fr', forest1)], voting='soft')
 ensemble_model_2.fit(X_train,Y_train)
-y_preds = ensemble_model_2.predict(X_test)
-print(ensemble_model_2.score(X_test,Y_test),"  ",ensemble_model_2.score(X_train,Y_train))
-print("-----")
-print(confusion_matrix(Y_test,y_preds)) # le soft est en général meilleur
+# y_preds = ensemble_model_2.predict(X_test)
+# print(ensemble_model_2.score(X_test,Y_test),"  ",ensemble_model_2.score(X_train,Y_train))
+# print("-----")
+# print(confusion_matrix(Y_test,y_preds)) # le soft est en général meilleur
 '''
 voting = "soft" a de meilleures performances que voting = "hard"
 Le KNN, le SVC et le randomForest s'avèrent être les modèles les plus performants pour notre modèle

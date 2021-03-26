@@ -9,6 +9,7 @@ from imblearn.over_sampling import SMOTE
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.model_selection import train_test_split
 from skimage import feature
+import os
 
 class importcsv:
     def __init__(self,path,train): 
@@ -61,7 +62,7 @@ def distance(data,A,B,specific=-1):
             dist.append(np.linalg.norm(a-b))
         return np.array(dist)
 
-def extractTextureFeatures():
+def extractTextureFeatures(file):
 
     maxHeight= math.ceil((np.max(distance(normalizedData,33,8))/10))*10 
     maxWidth= math.ceil((np.max(distance(normalizedData,33,16))/10))*10
@@ -72,11 +73,16 @@ def extractTextureFeatures():
     '''
 
     # for file in range(originalData.size):
-    file=450
+
+    #file=450
+
     headTilt=getHeadTilt(normalizedData,file)
     factor=normalizedData.normFactor[file]
 
     img = cv2.imread("./Dataset/trainset/"+originalData.filename[file]+".png", cv2.IMREAD_UNCHANGED)
+    # img = plt.imread("./Dataset/trainset/"+originalData.filename[file]+".png")
+
+    #print(len(os.listdir("./Dataset/trainset/")))
 
     img = cv2.resize(img, (int(img.shape[1] * factor), int(img.shape[0] * factor)), interpolation = cv2.INTER_AREA)
             
@@ -99,31 +105,34 @@ def extractTextureFeatures():
     #mouth=img[int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])+1,int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0])+1]
     mouth=img[int(normalizedData.landmarks[file,29,1]):int(normalizedData.landmarks[file,35,1])+25,int(normalizedData.landmarks[file,31,0])-10:int(normalizedData.landmarks[file,35,0])+10]
     
-    
     #mouth=img[int(normalizedData.landmarks[file,24,1])-25:int(normalizedData.landmarks[file,24,1])+35,int(normalizedData.landmarks[file,17,0]):int(normalizedData.landmarks[file,26,0])+1]
     
-    g_kernel = cv2.getGaborKernel((5, 5), 8.0, np.pi/4, 10.0, 0.5, 0, ktype=cv2.CV_32F)
-    mouth1 = cv2.filter2D(mouth, cv2.CV_8UC3, g_kernel)
-    plt.figure()
-    plt.imshow(mouth1)
-    plt.savefig("test_2.png")
+    # g_kernel = cv2.getGaborKernel((5, 5), 8.0, np.pi/4, 10.0, 0.5, 0, ktype=cv2.CV_32F)
+    # mouth1 = cv2.filter2D(mouth, cv2.CV_8UC3, g_kernel)
+    # plt.figure()
+    # plt.imshow(mouth1)
+    # plt.savefig("test_2.png")
 
-    print(LBP(mouth))
-    plt.figure()
-    plt.imshow(mouth)
-    plt.savefig("test_.png")
-    ret_s, th_s = cv2.threshold(mouth,127,255,cv2.THRESH_BINARY)
+    #print(LBP(mouth))
 
-    th_s=feature.local_binary_pattern(th_s, 24,
-            8, method="uniform")
-    th_s[th_s==24]=0
-    print(np.unique(th_s))
-    plt.imshow(th_s)
-    plt.savefig('test1.png')
-    plt.figure()
-    plt.scatter(np.round(normalizedData.landmarks[file,:,0]),np.round(normalizedData.landmarks[file,:,1]),c="red",s=1)
-    plt.imshow(img)
-    plt.savefig('test2.png')
+
+    # plt.figure()
+    # plt.imshow(mouth)
+    # plt.savefig("test_.png")
+    # ret_s, th_s = cv2.threshold(mouth,127,255,cv2.THRESH_BINARY)
+
+    # th_s=feature.local_binary_pattern(th_s, 24,
+    #         8, method="uniform")
+    # th_s[th_s==24]=0
+    #print(np.unique(th_s))
+
+
+    # plt.imshow(th_s)
+    # plt.savefig('test1.png')
+    # plt.figure()
+    # plt.scatter(np.round(normalizedData.landmarks[file,:,0]),np.round(normalizedData.landmarks[file,:,1]),c="red",s=1)
+    # plt.imshow(img)
+    # plt.savefig('test2.png')
 
 
 
@@ -134,28 +143,46 @@ def extractTextureFeatures():
 '''
 On fait l'Upsampling après le split, et dans le split nos données de test doivent avoir la même distribution
 '''
-def LBP(img_sector):
-    ret_s, th_s = cv2.threshold(img_sector,127,255,cv2.THRESH_BINARY)
-    th_s=feature.local_binary_pattern(th_s, 24,
-            8, method="uniform")
-    th_s[th_s==24]=0
-    rate_nblack_pix = (th_s[th_s!=0].size) / th_s.size
-    rate_nblack_on_bl = (th_s[th_s!=0].size)/(th_s[th_s==0].size)
-    return rate_nblack_pix,rate_nblack_on_bl
+def LBP(path,img_sector):
+    
+    nb_images= len(os.listdir(path)) - 1
+    output = np.empty(shape = (nb_images,2),dtype=np.float)
+
+    i=0
+    for image in os.listdir(path):
+        if image[-1]=="v":
+            continue
+        else:
+            path_im=os.path.join(path,image)
+            img = cv2.imread(path_im,0)
+            img = img[img_sector[0]-5:img_sector[1]+5, img_sector[2]-5:img_sector[3]+5]
+            ret_s, th_s = cv2.threshold(img,127,255,cv2.THRESH_BINARY)
+            th_s=feature.local_binary_pattern(th_s, 24,
+                    8, method="uniform")
+            th_s[th_s==24]=0
+            rate_nblack_pix = (th_s[th_s!=0].size) / th_s.size
+            rate_nblack_on_bl = (th_s[th_s!=0].size)/(th_s[th_s==0].size)
+            output[i,:]= np.array([rate_nblack_pix,rate_nblack_on_bl])
+            i+=1
+
+    return output #rate_nblack_pix,rate_nblack_on_bl
     '''
     La fonction renvoie un tuple
     '''
 
 
-def over_sampling(df):
+def over_sampling(df): # prend le trainset
     sm = SMOTE(random_state=42,k_neighbors=6)
     X_res, y_res = sm.fit_resample(df.iloc[:,1:-1], df.iloc[:,-1])
     print('Resampled dataset shape %s' % Counter(y_res))
     return X_res,y_res
 
-def extract_features():
+def extract_features(path):
     columns = ['h_nez_ment','h_bouche_int', 'oeil_d_sourcil', 'oeil_g_sourcil', 'inter_sourcil', 'relat_oeil_d_1',
-           'relat_oeil_d_2', 'relat_oeil_g_1', 'relat_oeil_g_2', 'relat_bouche_int','labels']
+           'relat_oeil_d_2', 'relat_oeil_g_1', 'relat_oeil_g_2', 'relat_bouche_int',
+            'LBP_mouth_1','LBP_mouth_2',
+
+           'labels']
     df = pd.DataFrame(index=range(originalData.size),columns=columns)
     df["h_nez_ment"]=distance(normalizedData,8,33)
     df["h_bouche_int"]=distance(normalizedData,62,66)
@@ -166,7 +193,15 @@ def extract_features():
     df["relat_oeil_d_2"]=(distance(normalizedData,42,45)/distance(normalizedData,44,46))
     df["relat_oeil_g_1"]=(distance(normalizedData,36,39)/distance(normalizedData,37,41))
     df["relat_oeil_g_2"]=(distance(normalizedData,36,39)/distance(normalizedData,38,40))
-    df["relat_bouche_int"]= (distance(normalizedData,60,64)/distance(normalizedData,62,66))
+    #df["relat_bouche_int"]= (distance(normalizedData,60,64)/distance(normalizedData,62,66))
+    df["relat_bouche_int"]= (distance(normalizedData,62,66)/distance(normalizedData,60,64))
+    a,b= int(np.max(normalizedData.landmarks[:,51,1],axis=0)),int(np.max(normalizedData.landmarks[:,57,1],axis=0))
+    c,d= int(np.max(normalizedData.landmarks[:,48,0],axis=0)),int(np.max(normalizedData.landmarks[:,54,0],axis=0))
+    
+    img_sec = (a,b,c,d)
+    mouth = LBP(path,img_sec)
+    df["LBP_mouth_1"] = mouth[:,0]
+    df["LBP_mouth_2"] = mouth[:,1]
     
     df["labels"]=originalData.target
     return df
@@ -177,12 +212,44 @@ def index_features_select(X,Y,c=1):
     len_feat = X.values.shape[1]
 
     #print(labels.columns[1:])
-    print(len_feat)
+
+    
+    #print(len_feat)
+    
     return np.where(rf.feature_importances_>=(c/len_feat)) 
 
 originalData = importcsv("./Dataset/trainset/trainset.csv",1)
 normalizedData = normalization(originalData)
-extractTextureFeatures()
+
+for file in range(len(os.listdir("./Dataset/trainset/"))-1): # on ne prend pas le fichier csv
+    extractTextureFeatures(file) # ceci nous donne de nouveaux landmarks
+    
+new_features = extract_features("./Dataset/trainset/")
+train_set = pd.read_csv("./Dataset/trainset/trainset.csv", sep=',',header=0)
+train_set = train_set.drop(columns=['filename', 'label'],axis = 1,errors='ignore') # pour rendre automatique même avec le test.csv
+print(normalizedData.landmarks[450,:,:].shape)
+for i in range(len(os.listdir("./Dataset/trainset/"))-1):
+    train_set.iloc[i,:68] = normalizedData.landmarks[i,:,0]
+    train_set.iloc[i,68:] = normalizedData.landmarks[i,:,1]
+
+trainset = pd.concat([train_set,new_features],axis=1)
+trainset.to_csv("features_train.csv",index=False)
+
+#file=450
+#img_sec= (int(normalizedData.landmarks[file,29,1]),int(normalizedData.landmarks[file,35,1]),int(normalizedData.landmarks[file,31,0]),int(normalizedData.landmarks[file,35,0]))
+
+# a= int(np.max(normalizedData.landmarks[:,51,1],axis=0))
+# b= int(np.max(normalizedData.landmarks[:,57,1],axis=0))
+# c= int(np.max(normalizedData.landmarks[:,48,0],axis=0))
+# d= int(np.max(normalizedData.landmarks[:,54,0],axis=0))
+
+# img_sec = (a,b,c,d)
+
+# print(LBP("./Dataset/trainset/",img_sec))
+
+
+
+
 
 # test = labels.copy()
 # X_over,Y_over = over_sampling(test)

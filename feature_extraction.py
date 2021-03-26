@@ -103,6 +103,7 @@ def extractTextureFeatures(file):
     '''
     #plt.imshow(img[int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0]),int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])])
     #mouth=img[int(normalizedData.landmarks[file,51,1]):int(normalizedData.landmarks[file,57,1])+1,int(normalizedData.landmarks[file,48,0]):int(normalizedData.landmarks[file,54,0])+1]
+    
     mouth=img[int(normalizedData.landmarks[file,29,1]):int(normalizedData.landmarks[file,35,1])+25,int(normalizedData.landmarks[file,31,0])-10:int(normalizedData.landmarks[file,35,0])+10]
     
     #mouth=img[int(normalizedData.landmarks[file,24,1])-25:int(normalizedData.landmarks[file,24,1])+35,int(normalizedData.landmarks[file,17,0]):int(normalizedData.landmarks[file,26,0])+1]
@@ -167,15 +168,11 @@ def LBP(path,img_sector):
 
     return output #rate_nblack_pix,rate_nblack_on_bl
     '''
-    La fonction renvoie un tuple
+    La fonction renvoie un numpy array
     '''
 
 
-def over_sampling(df): # prend le trainset
-    sm = SMOTE(random_state=42,k_neighbors=6)
-    X_res, y_res = sm.fit_resample(df.iloc[:,1:-1], df.iloc[:,-1])
-    print('Resampled dataset shape %s' % Counter(y_res))
-    return X_res,y_res
+
 
 def extract_features(path):
     columns = ['h_nez_ment','h_bouche_int', 'oeil_d_sourcil', 'oeil_g_sourcil', 'inter_sourcil', 'relat_oeil_d_1',
@@ -206,24 +203,14 @@ def extract_features(path):
     df["labels"]=originalData.target
     return df
 
-def index_features_select(X,Y,c=1):
-    rf = RandomForestClassifier(n_estimators=120,criterion='gini',max_depth=30)
-    rf.fit(X, Y)
-    len_feat = X.values.shape[1]
 
-    #print(labels.columns[1:])
-
-    
-    #print(len_feat)
-    
-    return np.where(rf.feature_importances_>=(c/len_feat)) 
 
 originalData = importcsv("./Dataset/trainset/trainset.csv",1)
 normalizedData = normalization(originalData)
 
 for file in range(len(os.listdir("./Dataset/trainset/"))-1): # on ne prend pas le fichier csv
     extractTextureFeatures(file) # ceci nous donne de nouveaux landmarks
-    
+
 new_features = extract_features("./Dataset/trainset/")
 train_set = pd.read_csv("./Dataset/trainset/trainset.csv", sep=',',header=0)
 train_set = train_set.drop(columns=['filename', 'label'],axis = 1,errors='ignore') # pour rendre automatique même avec le test.csv
@@ -234,6 +221,26 @@ for i in range(len(os.listdir("./Dataset/trainset/"))-1):
 
 trainset = pd.concat([train_set,new_features],axis=1)
 trainset.to_csv("features_train.csv",index=False)
+
+# testData = importcsv("./Dataset/testset/testset.csv",0)
+# testDataNorm= normalization(testData)
+
+# for file in range(len(os.listdir("./Dataset/testset/"))-1): # on ne prend pas le fichier csv
+#     extractTextureFeatures(file) # ceci nous donne de nouveaux landmarks
+
+# new_features = extract_features("./Dataset/trainset/")
+# train_set = pd.read_csv("./Dataset/trainset/trainset.csv", sep=',',header=0)
+# train_set = train_set.drop(columns=['filename', 'label'],axis = 1,errors='ignore') # pour rendre automatique même avec le test.csv
+# print(normalizedData.landmarks[450,:,:].shape)
+# for i in range(len(os.listdir("./Dataset/trainset/"))-1):
+#     train_set.iloc[i,:68] = normalizedData.landmarks[i,:,0]
+#     train_set.iloc[i,68:] = normalizedData.landmarks[i,:,1]
+
+# trainset = pd.concat([train_set,new_features],axis=1)
+# trainset.to_csv("features_train.csv",index=False)
+
+
+
 
 #file=450
 #img_sec= (int(normalizedData.landmarks[file,29,1]),int(normalizedData.landmarks[file,35,1]),int(normalizedData.landmarks[file,31,0]),int(normalizedData.landmarks[file,35,0]))

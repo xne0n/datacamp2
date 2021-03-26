@@ -68,11 +68,11 @@ def extractTextureFeatures():
     
     df = pd.DataFrame(index=range(originalData.size),columns=columns)
 
-    maxHeight= round ( np.max(distance(normalizedData,33,8)) +3 )
-    maxWidth= round ( np.max(distance(normalizedData,33,16)) +3 )
+    maxHeight= int ( np.max(distance(normalizedData,33,8)) +3 )
+    maxWidth= int ( np.max(distance(normalizedData,33,16)) +3 )
     
     for file in range(originalData.size):
-        print(file,end='')
+        # print(file,end='')
         headTilt=getHeadTilt(normalizedData,file)
         factor=normalizedData.normFactor[file]
 
@@ -207,11 +207,14 @@ normalizedData = normalization(originalData)
 texFeatures=extractTextureFeatures()
 landFeatures=landmarksDataFrame()
 geoFeatures=extractGeoFeatures()
+labels = geoFeatures.iloc[:,-1]
 
 fullFeatures = pd.concat([landFeatures,texFeatures,geoFeatures], axis=1)
 
-# finalFeatures = fullFeatures.iloc[:,index_features_select(fullFeatures.iloc[:,:-1],fullFeatures.iloc[:,-1])]
-fullFeatures.to_csv("features_train.csv",index=False)
+finalFeatures = fullFeatures.iloc[:,index_features_select(fullFeatures.iloc[:,:-1],fullFeatures.iloc[:,-1],c=1)]
+finalFeatures = pd.concat([finalFeatures,labels],axis=1)
+
+finalFeatures.to_csv("features_train.csv",index=False)
 
 # new_features = extract_features("./Dataset/trainset/")
 

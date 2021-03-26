@@ -39,10 +39,12 @@ def index_features_select(X,Y,c=1):
     print(np.where(rf.feature_importances_>=(c/len_feat)))
     return np.where(rf.feature_importances_>=(c/len_feat)) 
 
-indexes= index_features_select(X,Y,c=1)[0]
+# indexes= index_features_select(X,Y,c=1)[0]
+
 # print(indexes)
 # print(X.iloc[:,indexes])
-X=X.iloc[:,indexes]
+
+# X=X.iloc[:,indexes]
 
 
 for train_index, test_index in splits_.split(X,Y):
@@ -50,6 +52,7 @@ for train_index, test_index in splits_.split(X,Y):
     Y_train,Y_test = Y.iloc[train_index],Y.iloc[test_index]
     # print(Counter(Y_train),"  ",Counter(Y_test))
 X_train , Y_train = over_sampling(X_train,Y_train)
+print(Counter(Y_test))
 
 # clf= SVC(kernel="linear")
 # clf.fit(X_train,Y_train)

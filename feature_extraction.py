@@ -12,8 +12,16 @@ from skimage import feature
 import os
 
 class importcsv:
-    def __init__(self,path,train): 
-        df=pd.read_csv(path, sep=',',header=0)
+    def __init__(self,train):
+        self.train=train
+        if train :
+            self.path="./Dataset/trainset/"
+            df=pd.read_csv(self.path+"trainset.csv", sep=',',header=0)
+            self.target = df.iloc[:,-1:]
+        else:
+            self.path="./Dataset/testset/"
+            df=pd.read_csv(self.path+"testset.csv", sep=',',header=0)
+
         self.filename=df["filename"].astype(str).values.tolist()
         self.size=len(df)
         self.landmarks=np.empty([self.size,68,2],dtype=np.longdouble)
@@ -21,8 +29,7 @@ class importcsv:
             for j in range(0,68):
                 self.landmarks[i,j,0] = df.iloc[i,j+1]
                 self.landmarks[i,j,1] = df.iloc[i,j+69]
-        if train :
-            self.target = df.iloc[:,-1:]
+        
 
 class normalization:
     def __init__(self,data):
@@ -72,11 +79,11 @@ def extractTextureFeatures():
     maxWidth= round ( np.max(distance(normalizedData,33,16)) +3 )
     
     for file in range(originalData.size):
-        print(file,end='')
+
         headTilt=getHeadTilt(normalizedData,file)
         factor=normalizedData.normFactor[file]
 
-        img = cv2.imread("./Dataset/trainset/"+originalData.filename[file]+".png", cv2.IMREAD_UNCHANGED)
+        img = cv2.imread(originalData.path+originalData.filename[file]+".png", cv2.IMREAD_UNCHANGED)
         # img = cv2.cvtColor(img, cv2.COLOR_BGR2RGB)
         img = cv2.resize(img, (int(img.shape[1] * factor), int(img.shape[0] * factor)), interpolation = cv2.INTER_AREA)
                 
@@ -92,37 +99,31 @@ def extractTextureFeatures():
             normalizedData.landmarks[file,i,0]=rotatedX-noseX+maxWidth
             normalizedData.landmarks[file,i,1]=rotatedY-noseY+maxHeight
             # plt.scatter(np.round(normalizedData.landmarks[file,i,0]),np.round(normalizedData.landmarks[file,i,1]),c="red",s=1)
-        
+
         '''
         ZONE ENTRE LES SOURCILS
         '''
         height=int((normalizedData.landmarks[file,27,1]-normalizedData.landmarks[file,21,1])/2)
-        width=int((normalizedData.landmarks[file,22,0]-normalizedData.landmarks[file,21,0])/2)
         centerY=int(normalizedData.landmarks[file,27,1]-height)
         centerX=int(normalizedData.landmarks[file,27,0])
-        
-        df.iloc[file,0], df.iloc[file,1] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+        df.iloc[file,0], df.iloc[file,1] = LBP(img[centerY-50:centerY+50,centerX-50:centerX+50])
 
         '''
         ZONE COIN DROIT DE LA BOUCHE
         '''
-        height=int((normalizedData.landmarks[file,59,1]-normalizedData.landmarks[file,49,1]))
-        width=int((normalizedData.landmarks[file,49,0]-normalizedData.landmarks[file,48,0]))
         centerY=int(normalizedData.landmarks[file,48,1])
         centerX=int(normalizedData.landmarks[file,48,0])
         
-        df.iloc[file,2], df.iloc[file,3] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+        df.iloc[file,2], df.iloc[file,3] = LBP(img[centerY-25:centerY+25,centerX-25:centerX+25])
 
         '''
         ZONE COIN GAUCHE DE LA BOUCHE
         '''
 
-        height=int((normalizedData.landmarks[file,55,1]-normalizedData.landmarks[file,52,1]))
-        width=int((normalizedData.landmarks[file,54,0]-normalizedData.landmarks[file,53,0]))
         centerY=int(normalizedData.landmarks[file,54,1])
         centerX=int(normalizedData.landmarks[file,54,0])
         
-        df.iloc[file,4], df.iloc[file,5] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+        df.iloc[file,4], df.iloc[file,5] = LBP(img[centerY-25:centerY+25,centerX-25:centerX+25])
 
         '''
         ZONE PAUPIERE GAUCHE
@@ -133,7 +134,7 @@ def extractTextureFeatures():
         centerY=int(normalizedData.landmarks[file,41,1]+height)
         centerX=int(normalizedData.landmarks[file,36,0]+width)
 
-        df.iloc[file,6], df.iloc[file,7] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+        df.iloc[file,6], df.iloc[file,7] = LBP(img[centerY-75:centerY+75,centerX-75:centerX+75])
 
         '''
         ZONE PAUPIERE DROITE
@@ -143,8 +144,7 @@ def extractTextureFeatures():
         width=int((normalizedData.landmarks[file,45,0]-normalizedData.landmarks[file,42,0])/2)
         centerY=int(normalizedData.landmarks[file,47,1]+height)
         centerX=int(normalizedData.landmarks[file,42,0]+width)
-
-        df.iloc[file,8], df.iloc[file,9] = LBP(img[centerY-height:centerY+height,centerX-width:centerX+width])
+        df.iloc[file,8], df.iloc[file,9] = LBP(img[centerY-75:centerY+75,centerX-75:centerX+75])
         
     return df
     # plt.imshow(cv2.cvtColor(img[centerY-height:centerY+height,centerX-width:centerX+width], cv2.COLOR_BGR2RGB))
@@ -191,7 +191,8 @@ def extractGeoFeatures():
     df["relat_oeil_g_2"]=(distance(normalizedData,36,39)/distance(normalizedData,38,40))
     df["relat_bouche_int"]= (distance(normalizedData,62,66)/distance(normalizedData,60,64))
 
-    df["labels"]=originalData.target
+    if originalData.train :
+        df["labels"]=originalData.target
     return df
 
 def index_features_select(X,Y,c=1):
@@ -201,27 +202,30 @@ def index_features_select(X,Y,c=1):
     return np.where(rf.feature_importances_>=(c/len_feat))[0] 
 
 
-originalData = importcsv("./Dataset/trainset/trainset.csv",1)
+originalData = importcsv(1)
+
 normalizedData = normalization(originalData)
 
 texFeatures=extractTextureFeatures()
 landFeatures=landmarksDataFrame()
 geoFeatures=extractGeoFeatures()
 
-fullFeatures = pd.concat([landFeatures,texFeatures,geoFeatures], axis=1)
+fullFeaturesTrain = pd.concat([landFeatures,texFeatures,geoFeatures], axis=1)
 
-# finalFeatures = fullFeatures.iloc[:,index_features_select(fullFeatures.iloc[:,:-1],fullFeatures.iloc[:,-1])]
-fullFeatures.to_csv("features_train.csv",index=False)
+selectedFeatures = index_features_select(fullFeaturesTrain.iloc[:,:-1],fullFeaturesTrain.iloc[:,-1])
 
-# new_features = extract_features("./Dataset/trainset/")
+fullFeaturesTrain = fullFeaturesTrain.iloc[:,selectedFeatures]
+fullFeaturesTrain.to_csv("features_train.csv",index=False)
 
+originalData = importcsv(0)
 
-# train_set = pd.read_csv("./Dataset/trainset/trainset.csv", sep=',',header=0)
-# train_set = train_set.drop(columns=['filename', 'label'],axis = 1,errors='ignore') # pour rendre automatique même avec le test.csv
+normalizedData = normalization(originalData)
 
-# for i in range(len(os.listdir("./Dataset/trainset/"))-1):
-#     train_set.iloc[i,:68] = normalizedData.landmarks[i,:,0]
-#     train_set.iloc[i,68:] = normalizedData.landmarks[i,:,1]
+texFeatures=extractTextureFeatures()
+landFeatures=landmarksDataFrame()
+geoFeatures=extractGeoFeatures()
 
-# trainset = pd.concat([train_set,new_features],axis=1)
-# trainset.to_csv("features_train.csv",index=False)
+fullFeaturesTest = pd.concat([landFeatures,texFeatures,geoFeatures], axis=1)
+fullFeaturesTest = fullFeaturesTest.iloc[:,selectedFeatures]
+fullFeaturesTest.to_csv("features_test.csv",index=False)
+

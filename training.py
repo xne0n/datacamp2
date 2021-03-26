@@ -76,18 +76,20 @@ print(Counter(Y_test))
 # print(confusion_matrix(Y_test,y_preds))
 
 svc1=SVC(kernel="linear",probability=True,random_state=42)
-NN1=KNeighborsClassifier(n_neighbors=2,algorithm="kd_tree")
+NN1=KNeighborsClassifier(n_neighbors=1,algorithm="kd_tree")
 forest1=RandomForestClassifier(n_estimators=120,criterion="gini",max_depth=30,min_samples_split = 5 ,random_state=42)
-ensemble_model_1 = VotingClassifier(estimators=[
-         ('lr', svc1), ('rf', NN1), ('gnb', forest1)], voting='hard')
-ensemble_model_1.fit(X_train,Y_train)
-y_preds = ensemble_model_1.predict(X_test)
-print(ensemble_model_1.score(X_test,Y_test),"  ",ensemble_model_1.score(X_train,Y_train))
-print("-----")
-print(confusion_matrix(Y_test,y_preds))
+# ensemble_model_1 = VotingClassifier(estimators=[
+#          ('lr', svc1), ('rf', NN1), ('gnb', forest1)], voting='hard')
+# ensemble_model_1.fit(X_train,Y_train)
+# y_preds = ensemble_model_1.predict(X_test)
+# print(ensemble_model_1.score(X_test,Y_test),"  ",ensemble_model_1.score(X_train,Y_train))
+# print("-----")
+# print(confusion_matrix(Y_test,y_preds))
 
 ensemble_model_2 = VotingClassifier(estimators=[
-         ('lr', svc1), ('rf', NN1), ('gnb', forest1)], voting='soft')
+         ('svc', svc1), 
+        #  ('knn', NN1), 
+         ('fr', forest1)], voting='soft')
 ensemble_model_2.fit(X_train,Y_train)
 y_preds = ensemble_model_2.predict(X_test)
 print(ensemble_model_2.score(X_test,Y_test),"  ",ensemble_model_2.score(X_train,Y_train))

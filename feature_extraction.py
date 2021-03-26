@@ -91,7 +91,7 @@ def distance(data,A,B,specific=-1):
         return np.array(dist)
 
 '''
-Cette fonction nous permet d'extraire les Features de textures et de normalisé toutes les images
+Cette fonction nous permet d'extraire les Features de textures et de normaliser toutes les images
 '''
 
 def extractTextureFeatures():
@@ -125,7 +125,7 @@ def extractTextureFeatures():
             # plt.scatter(np.round(normalizedData.landmarks[file,i,0]),np.round(normalizedData.landmarks[file,i,1]),c="red",s=1)
 
         '''
-        Ici on va maintenant extraire toutes les zone interessantes du visage et y appliqué un Local Binary Patern
+        Ici on va maintenant extraire toutes les zones intéressantes du visage et y appliquer un Local Binary Patern
 
         ZONE ENTRE LES SOURCILS
         '''
@@ -175,7 +175,7 @@ def extractTextureFeatures():
     return df
 
 '''
-Cette fonction applique un Local Binary Patern à l'image reçu
+Cette fonction applique un Local Binary Patern à l'image reçue
 '''
 def LBP(img):
 
@@ -188,7 +188,7 @@ def LBP(img):
     return rate_nblack_pix, rate_nblack_on_bl
 
 '''
-Puisque nos landmarks sont normalisée on peut les ajouter en temps que features on créer donc un dataframe
+Puisque nos landmarks sont normalisées on peut les ajouter en temps que features on créer donc un dataframe
 '''
 def landmarksDataFrame():
 
@@ -197,7 +197,7 @@ def landmarksDataFrame():
     return pd.concat([dfx, dfy], axis=1)
 
 '''
-Ici on creer notre dataframe pour les features de géométrie celle-ci vont calculé des relations entre les landmarks
+Ici on cree notre dataframe pour les features de géométrie celle-ci vont calculé des relations entre les landmarks
 '''
 
 def extractGeoFeatures():
@@ -253,7 +253,7 @@ finalFeatures = pd.concat([finalFeatures,labels],axis=1)
 
 finalFeatures.to_csv("features_train.csv",index=False)
 '''
-Maintenant on créer notre features_test.csv en ne prenant que les features qui on été selectionné lors de la features selection du train
+Maintenant on crée notre features_test.csv en ne prenant que les features qui on été selectionné lors de la features selection du train
 '''
 originalData = importcsv(0)
 
